@@ -22,8 +22,8 @@ func main() {
 
 	flightsHandler := handler.NewFlightsHandler()
 
-	e.GET("/", flightsHandler.GetFlights)
-	e.GET("/auto-complete", flightsHandler.GetAutoComplete)
+	e.GET("/flights/search", flightsHandler.GetFlights)
+	e.GET("/airports", flightsHandler.GetAirports)
 
 	e.Logger.Fatal(e.Start(":3000"))
 }
