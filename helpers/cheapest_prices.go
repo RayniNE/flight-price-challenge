@@ -2,9 +2,12 @@ package helpers
 
 import (
 	"sort"
+	"time"
 
 	"github.com/raynine/flight-price-challenge/models"
 )
+
+const DATE_FORMAT = "2006-01-02T15:04:05"
 
 func GetOrderedFlightsSkyByPrice(model *models.ResponseFlightsSky) []models.Flights {
 	flights := []models.Flights{}
@@ -17,10 +20,15 @@ func GetOrderedFlightsSkyByPrice(model *models.ResponseFlightsSky) []models.Flig
 		if len(itinerary.Legs) > 0 {
 			leg := itinerary.Legs[0]
 
+			arrival, _ := time.Parse(DATE_FORMAT, leg.Arrival)
+			departure, _ := time.Parse(DATE_FORMAT, leg.Departure)
+
 			flight := models.Flights{
 				Price:           itinerary.Price.Raw,
-				OriginCode:      leg.Origin.Name,
-				DestinationCode: leg.Destination.Name,
+				OriginName:      leg.Origin.Name,
+				ArrivalTime:     arrival,
+				DepartureTime:   departure,
+				DestinationName: leg.Destination.Name,
 			}
 
 			flights = append(flights, flight)
@@ -50,8 +58,10 @@ func GetOrderedAgodaFlightsByPrice(model *models.AgodaResponse) []models.Flights
 
 		if len(bundle.OutboundSlice.Segments) > 0 {
 			segment := bundle.OutboundSlice.Segments[0]
-			flight.ArrivalTime = segment.ArrivalDateTime
-			flight.DepartureTime = segment.DepartDateTime
+			arrival, _ := time.Parse(DATE_FORMAT, segment.ArrivalDateTime)
+			departure, _ := time.Parse(DATE_FORMAT, segment.DepartDateTime)
+			flight.ArrivalTime = arrival
+			flight.DepartureTime = departure
 			flight.OriginName = segment.AirportContent.DepartureAirportName
 			flight.DestinationName = segment.AirportContent.ArrivalAirportName
 		}
@@ -83,8 +93,10 @@ func GetOrderedPriceLineFlightsByPrice(model *models.PricelineResponse) []models
 			slice := listing.Slices[0]
 			if len(slice.Segments) > 0 {
 				segment := slice.Segments[0]
-				flight.DepartureTime = segment.DepartInfo.Time.DateTime
-				flight.ArrivalTime = segment.ArrivalInfo.Time.DateTime
+				arrival, _ := time.Parse(DATE_FORMAT, segment.ArrivalInfo.Time.DateTime)
+				departure, _ := time.Parse(DATE_FORMAT, segment.DepartInfo.Time.DateTime)
+				flight.DepartureTime = arrival
+				flight.ArrivalTime = departure
 				flight.DestinationName = segment.ArrivalInfo.Airport.Name
 				flight.OriginName = segment.DepartInfo.Airport.Name
 			}

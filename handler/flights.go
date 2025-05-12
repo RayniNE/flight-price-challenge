@@ -30,12 +30,12 @@ func (handler *FlightsHandler) GetFlights(c echo.Context) error {
 		Destination: destination,
 	}
 
-	response, err := helpers.GetPricelineFlights(dto)
+	response, err := helpers.GetFlightsResponse(dto)
 	if err != nil {
-		fmt.Printf("An error ocurred while opening json file: %s", err.Error())
-		return c.JSON(http.StatusInternalServerError, map[string]any{
-			"error": fmt.Sprintf("An error ocurred while opening json file: %s", err.Error()),
+		c.JSON(http.StatusInternalServerError, map[string]any{
+			"error": err.Error(),
 		})
+		return nil
 	}
 
 	c.JSON(http.StatusOK, response)

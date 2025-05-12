@@ -10,7 +10,9 @@ func GetOrderedFlightByTime(flights []models.Flights) []models.Flights {
 	orderedFlights := flights
 
 	sort.Slice(orderedFlights, func(i, j int) bool {
-		return orderedFlights[i].ArrivalTime < orderedFlights[j].ArrivalTime
+		firstTime := orderedFlights[i].DepartureTime.Sub(orderedFlights[i].ArrivalTime)
+		secondTime := orderedFlights[j].DepartureTime.Sub(orderedFlights[j].ArrivalTime)
+		return firstTime < secondTime
 	})
 
 	return orderedFlights

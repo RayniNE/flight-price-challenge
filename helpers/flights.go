@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 
 	"github.com/raynine/flight-price-challenge/models"
 )
@@ -139,6 +140,56 @@ func GetAgodaFlights(dto models.GetFlightsDTO) ([]models.Flights, error) {
 	}
 
 	response := GetOrderedAgodaFlightsByPrice(model)
+
+	return response, nil
+}
+
+func GetFlightsResponse(dto models.GetFlightsDTO) (*models.FlightsResponse, error) {
+	priceLineResponse, err := GetPricelineFlights(dto)
+	if err != nil {
+		fmt.Printf("An error ocurred while getting priceline flights: %s", err.Error())
+		return nil, fmt.Errorf("an error ocurred while getting priceline flights: %s", err.Error())
+	}
+
+	agodaFlightsResponse, err := GetAgodaFlights(dto)
+	if err != nil {
+		fmt.Printf("an error ocurred while getting agoda flights: %s", err.Error())
+		return nil, fmt.Errorf("an error ocurred while getting agoda flights: %s", err.Error())
+	}
+
+	flightsSkyResponse, err := GetFlightSkyFlights(dto)
+	if err != nil {
+		fmt.Printf("an error ocurred while getting flights sky flights: %s", err.Error())
+		return nil, fmt.Errorf("an error ocurred while getting flights sky flights: %s", err.Error())
+	}
+
+	priceLineArrivalOrdered := GetOrderedFlightByTime(priceLineResponse)
+	agodaArrivalOrdered := GetOrderedFlightByTime(agodaFlightsResponse)
+	flightsSkyArrivalOrdered := GetOrderedFlightByTime(flightsSkyResponse)
+
+	cheapestFlights := []models.Flights{priceLineResponse[0], agodaFlightsResponse[0], flightsSkyResponse[0]}
+	fastestFlights := []models.Flights{priceLineArrivalOrdered[0], agodaArrivalOrdered[0], flightsSkyArrivalOrdered[0]}
+
+	// Sort the final slices by price and fastest
+	sort.Slice(cheapestFlights, func(i, j int) bool {
+		return cheapestFlights[i].Price < cheapestFlights[j].Price
+	})
+
+	fastestFlights = GetOrderedFlightByTime(fastestFlights)
+
+	otherFlights := []models.Flights{}
+	otherFlights = append(otherFlights, priceLineResponse[1:]...)
+	otherFlights = append(otherFlights, agodaFlightsResponse[1:]...)
+	otherFlights = append(otherFlights, flightsSkyResponse[1:]...)
+	otherFlights = append(otherFlights, priceLineArrivalOrdered[1:]...)
+	otherFlights = append(otherFlights, agodaArrivalOrdered[1:]...)
+	otherFlights = append(otherFlights, flightsSkyArrivalOrdered[1:]...)
+
+	response := &models.FlightsResponse{
+		CheapestFlights: cheapestFlights,
+		FastestFlights:  fastestFlights,
+		OtherFlights:    otherFlights,
+	}
 
 	return response, nil
 }
