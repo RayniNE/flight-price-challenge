@@ -82,8 +82,8 @@ func (model *PricelineResponse) MapPriceLineToModel() []Flights {
 				segment := slice.Segments[0]
 				arrival, _ := time.Parse(DATE_FORMAT, segment.ArrivalInfo.Time.DateTime)
 				departure, _ := time.Parse(DATE_FORMAT, segment.DepartInfo.Time.DateTime)
-				flight.DepartureTime = arrival
-				flight.ArrivalTime = departure
+				flight.DepartureTime = departure
+				flight.ArrivalTime = arrival
 				flight.DestinationName = segment.ArrivalInfo.Airport.Name
 				flight.OriginName = segment.DepartInfo.Airport.Name
 			}

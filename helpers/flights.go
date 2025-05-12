@@ -162,24 +162,27 @@ func GetFlightsResponse(dto models.GetFlightsDTO) (*models.FlightsResponse, erro
 		return nil, fmt.Errorf("an error ocurred while getting flights sky flights: %s", err.Error())
 	}
 
-	cheapestFlights := []models.Flights{priceLineResponse[0], agodaFlightsResponse[0], flightsSkyResponse[0]}
+	priceLinePriceOrdered := GetOrderedFlightByPrice(priceLineResponse)
+	agodaPriceOrdered := GetOrderedFlightByPrice(agodaFlightsResponse)
+	flightsSkyPriceOrdered := GetOrderedFlightByPrice(flightsSkyResponse)
 
-	priceLineArrivalOrdered := GetOrderedFlightByTime(priceLineResponse)
-	agodaArrivalOrdered := GetOrderedFlightByTime(agodaFlightsResponse)
-	flightsSkyArrivalOrdered := GetOrderedFlightByTime(flightsSkyResponse)
+	cheapestFlights := []models.Flights{priceLinePriceOrdered[0], agodaPriceOrdered[0], flightsSkyPriceOrdered[0]}
+
+	priceLineArrivalOrdered := GetOrderedFlightByTime(priceLinePriceOrdered)
+	agodaArrivalOrdered := GetOrderedFlightByTime(agodaPriceOrdered)
+	flightsSkyArrivalOrdered := GetOrderedFlightByTime(flightsSkyPriceOrdered)
 
 	fastestFlights := []models.Flights{priceLineArrivalOrdered[0], agodaArrivalOrdered[0], flightsSkyArrivalOrdered[0]}
 
 	// Sort the final slices by price and fastest
-
 	cheapestFlights = GetOrderedFlightByPrice(cheapestFlights)
 
 	fastestFlights = GetOrderedFlightByTime(fastestFlights)
 
 	otherFlights := []models.Flights{}
-	otherFlights = append(otherFlights, priceLineResponse[1:]...)
-	otherFlights = append(otherFlights, agodaFlightsResponse[1:]...)
-	otherFlights = append(otherFlights, flightsSkyResponse[1:]...)
+	otherFlights = append(otherFlights, flightsSkyPriceOrdered[1:]...)
+	otherFlights = append(otherFlights, agodaPriceOrdered[1:]...)
+	otherFlights = append(otherFlights, flightsSkyPriceOrdered[1:]...)
 	otherFlights = append(otherFlights, priceLineArrivalOrdered[1:]...)
 	otherFlights = append(otherFlights, agodaArrivalOrdered[1:]...)
 	otherFlights = append(otherFlights, flightsSkyArrivalOrdered[1:]...)
