@@ -18,6 +18,12 @@ type Flights struct {
 	ArrivalTime     time.Time `json:"arrival_time,omitempty"`
 }
 
+type FlightsByAPI struct {
+	Agoda     []Flights
+	PriceLine []Flights
+	FlightSky []Flights
+}
+
 type FlightsResponse struct {
 	CheapestFlights []Flights `json:"cheapest_flights"`
 	FastestFlights  []Flights `json:"fastest_flights"`

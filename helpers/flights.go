@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/raynine/flight-price-challenge/models"
 )
@@ -144,27 +145,65 @@ func GetAgodaFlights(dto models.GetFlightsDTO) ([]models.Flights, error) {
 }
 
 func GetFlightsResponse(dto models.GetFlightsDTO) (*models.FlightsResponse, error) {
-	priceLineResponse, err := GetPricelineFlights(dto)
-	if err != nil {
-		fmt.Printf("An error ocurred while getting priceline flights: %s", err.Error())
-		return nil, fmt.Errorf("an error ocurred while getting priceline flights: %s", err.Error())
+	model := &models.FlightsByAPI{}
+	var (
+		priceLineError    error
+		agodaFlightsError error
+		flightsSkyError   error
+	)
+
+	wg := sync.WaitGroup{}
+
+	wg.Add(3)
+
+	go func(model *models.FlightsByAPI) {
+		defer wg.Done()
+		priceLineResponse, err := GetPricelineFlights(dto)
+		if err != nil {
+			priceLineError = fmt.Errorf("an error ocurred while getting priceline flights: %s", err.Error())
+		}
+
+		model.PriceLine = priceLineResponse
+	}(model)
+
+	go func(model *models.FlightsByAPI) {
+		defer wg.Done()
+
+		flightsSkyResponse, err := GetFlightSkyFlights(dto)
+		if err != nil {
+			flightsSkyError = fmt.Errorf("an error ocurred while getting flights sky flights: %s", err.Error())
+		}
+
+		model.FlightSky = flightsSkyResponse
+	}(model)
+
+	go func(model *models.FlightsByAPI) {
+		defer wg.Done()
+		agodaResponse, err := GetAgodaFlights(dto)
+		if err != nil {
+			agodaFlightsError = fmt.Errorf("an error ocurred while getting agoda flights: %s", err.Error())
+		}
+
+		model.Agoda = agodaResponse
+	}(model)
+
+	wg.Wait()
+
+	if agodaFlightsError != nil {
+		return nil, agodaFlightsError
 	}
 
-	agodaFlightsResponse, err := GetAgodaFlights(dto)
-	if err != nil {
-		fmt.Printf("an error ocurred while getting agoda flights: %s", err.Error())
-		return nil, fmt.Errorf("an error ocurred while getting agoda flights: %s", err.Error())
+	if priceLineError != nil {
+		return nil, priceLineError
 	}
 
-	flightsSkyResponse, err := GetFlightSkyFlights(dto)
-	if err != nil {
-		fmt.Printf("an error ocurred while getting flights sky flights: %s", err.Error())
-		return nil, fmt.Errorf("an error ocurred while getting flights sky flights: %s", err.Error())
+	if flightsSkyError != nil {
+		return nil, flightsSkyError
 	}
 
-	priceLinePriceOrdered := GetOrderedFlightByPrice(priceLineResponse)
-	agodaPriceOrdered := GetOrderedFlightByPrice(agodaFlightsResponse)
-	flightsSkyPriceOrdered := GetOrderedFlightByPrice(flightsSkyResponse)
+	priceLinePriceOrdered := GetOrderedFlightByPrice(model.PriceLine)
+	agodaPriceOrdered := GetOrderedFlightByPrice(model.Agoda)
+	flightsSkyPriceOrdered := GetOrderedFlightByPrice(model.FlightSky)
 
 	cheapestFlights := []models.Flights{priceLinePriceOrdered[0], agodaPriceOrdered[0], flightsSkyPriceOrdered[0]}
 
