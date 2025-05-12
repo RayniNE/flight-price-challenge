@@ -1,5 +1,9 @@
 package models
 
+import (
+	"time"
+)
+
 type ResponseFlightsSky struct {
 	Data    DataFlightsSky `json:"data"`
 	Status  bool           `json:"status"`
@@ -50,4 +54,33 @@ type AirportFlightsSky struct {
 	City          string `json:"city"`
 	Country       string `json:"country"`
 	IsHighlighted bool   `json:"isHighlighted"`
+}
+
+func (model *ResponseFlightsSky) MapPriceLineToModel() []Flights {
+	flights := []Flights{}
+
+	if model.Data.Itineraries == nil {
+		return flights
+	}
+
+	for _, itinerary := range model.Data.Itineraries {
+		if len(itinerary.Legs) > 0 {
+			leg := itinerary.Legs[0]
+
+			arrival, _ := time.Parse(DATE_FORMAT, leg.Arrival)
+			departure, _ := time.Parse(DATE_FORMAT, leg.Departure)
+
+			flight := Flights{
+				Price:           itinerary.Price.Raw,
+				OriginName:      leg.Origin.Name,
+				ArrivalTime:     arrival,
+				DepartureTime:   departure,
+				DestinationName: leg.Destination.Name,
+			}
+
+			flights = append(flights, flight)
+		}
+	}
+
+	return flights
 }

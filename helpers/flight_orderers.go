@@ -17,3 +17,13 @@ func GetOrderedFlightByTime(flights []models.Flights) []models.Flights {
 
 	return orderedFlights
 }
+
+func GetOrderedFlightByPrice(flights []models.Flights) []models.Flights {
+	orderedFlights := flights
+
+	sort.Slice(flights, func(i, j int) bool {
+		return flights[i].Price < flights[j].Price
+	})
+
+	return orderedFlights
+}

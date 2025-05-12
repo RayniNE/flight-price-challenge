@@ -1,5 +1,9 @@
 package models
 
+import "time"
+
+const DATE_FORMAT = "2006-01-02T15:04:05"
+
 type PricelineResponse struct {
 	Data PricelineData `json:"data"`
 }
@@ -56,4 +60,36 @@ type ExtractedPricelineInfo struct {
 	ArrivalDateTime string
 	DepartDateTime  string
 	AirportInfo     PricelineAirportContent // Adaptado para la estructura de Priceline
+}
+
+func (model *PricelineResponse) MapPriceLineToModel() []Flights {
+	// Recorrer itinerarios y extraer información
+	flights := []Flights{}
+
+	if model.Data.Listings == nil {
+		return flights // No hay listings para procesar
+	}
+
+	for _, listing := range model.Data.Listings {
+		flight := Flights{}
+
+		flight.Price = listing.TotalPriceWithDecimal.Price
+
+		// Se asume que el primer slice y el primer segmento son los relevantes.
+		if len(listing.Slices) > 0 {
+			slice := listing.Slices[0]
+			if len(slice.Segments) > 0 {
+				segment := slice.Segments[0]
+				arrival, _ := time.Parse(DATE_FORMAT, segment.ArrivalInfo.Time.DateTime)
+				departure, _ := time.Parse(DATE_FORMAT, segment.DepartInfo.Time.DateTime)
+				flight.DepartureTime = arrival
+				flight.ArrivalTime = departure
+				flight.DestinationName = segment.ArrivalInfo.Airport.Name
+				flight.OriginName = segment.DepartInfo.Airport.Name
+			}
+		}
+		flights = append(flights, flight)
+	}
+
+	return flights
 }

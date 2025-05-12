@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sort"
 
 	"github.com/raynine/flight-price-challenge/models"
 )
@@ -51,7 +50,7 @@ func GetPricelineFlights(dto models.GetFlightsDTO) ([]models.Flights, error) {
 		return nil, errors.New("error while retrieving flights")
 	}
 
-	response := GetOrderedPriceLineFlightsByPrice(model)
+	response := model.MapPriceLineToModel()
 
 	return response, nil
 }
@@ -95,7 +94,7 @@ func GetFlightSkyFlights(dto models.GetFlightsDTO) ([]models.Flights, error) {
 		return nil, errors.New("error while retrieving flights")
 	}
 
-	response := GetOrderedFlightsSkyByPrice(model)
+	response := model.MapPriceLineToModel()
 
 	return response, nil
 }
@@ -139,7 +138,7 @@ func GetAgodaFlights(dto models.GetFlightsDTO) ([]models.Flights, error) {
 		return nil, errors.New("error while retrieving flights")
 	}
 
-	response := GetOrderedAgodaFlightsByPrice(model)
+	response := model.MapPriceLineToModel()
 
 	return response, nil
 }
@@ -163,17 +162,17 @@ func GetFlightsResponse(dto models.GetFlightsDTO) (*models.FlightsResponse, erro
 		return nil, fmt.Errorf("an error ocurred while getting flights sky flights: %s", err.Error())
 	}
 
+	cheapestFlights := []models.Flights{priceLineResponse[0], agodaFlightsResponse[0], flightsSkyResponse[0]}
+
 	priceLineArrivalOrdered := GetOrderedFlightByTime(priceLineResponse)
 	agodaArrivalOrdered := GetOrderedFlightByTime(agodaFlightsResponse)
 	flightsSkyArrivalOrdered := GetOrderedFlightByTime(flightsSkyResponse)
 
-	cheapestFlights := []models.Flights{priceLineResponse[0], agodaFlightsResponse[0], flightsSkyResponse[0]}
 	fastestFlights := []models.Flights{priceLineArrivalOrdered[0], agodaArrivalOrdered[0], flightsSkyArrivalOrdered[0]}
 
 	// Sort the final slices by price and fastest
-	sort.Slice(cheapestFlights, func(i, j int) bool {
-		return cheapestFlights[i].Price < cheapestFlights[j].Price
-	})
+
+	cheapestFlights = GetOrderedFlightByPrice(cheapestFlights)
 
 	fastestFlights = GetOrderedFlightByTime(fastestFlights)
 

@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 // Agoda contiene la sección de datos
 type AgodaResponse struct {
 	Data AgodaData `json:"data"`
@@ -70,4 +72,34 @@ type AirportContent struct {
 	ArrivalCountryID     int    `json:"arrivalCountryId"`
 	ArrivalCountryName   string `json:"arrivalCountryName"`
 	ArrivalAirportName   string `json:"arrivalAirportName"`
+}
+
+func (model *AgodaResponse) MapPriceLineToModel() []Flights {
+	flights := []Flights{}
+
+	if model.Data.Bundles == nil {
+		return flights
+	}
+
+	for _, bundle := range model.Data.Bundles {
+		flight := Flights{}
+
+		if len(bundle.BundlePrice) > 0 && bundle.BundlePrice[0].Price.USD.Display.PerBook.AllInclusive > 0 {
+			flight.Price = bundle.BundlePrice[0].Price.USD.Display.PerBook.AllInclusive
+		}
+
+		if len(bundle.OutboundSlice.Segments) > 0 {
+			segment := bundle.OutboundSlice.Segments[0]
+
+			arrival, _ := time.Parse(DATE_FORMAT, segment.ArrivalDateTime)
+			departure, _ := time.Parse(DATE_FORMAT, segment.DepartDateTime)
+			flight.ArrivalTime = arrival
+			flight.DepartureTime = departure
+			flight.OriginName = segment.AirportContent.DepartureAirportName
+			flight.DestinationName = segment.AirportContent.ArrivalAirportName
+		}
+		flights = append(flights, flight)
+	}
+
+	return flights
 }
