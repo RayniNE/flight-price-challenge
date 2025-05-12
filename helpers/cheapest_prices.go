@@ -9,6 +9,10 @@ import (
 func GetOrderedFlightsSkyByPrice(model *models.ResponseFlightsSky) []models.Flights {
 	flights := []models.Flights{}
 
+	if model.Data.Itineraries == nil {
+		return flights
+	}
+
 	for _, itinerary := range model.Data.Itineraries {
 		if len(itinerary.Legs) > 0 {
 			leg := itinerary.Legs[0]
